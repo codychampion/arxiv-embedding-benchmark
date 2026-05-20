@@ -9,6 +9,8 @@ on:
 jobs:
   pytest:
     runs-on: ubuntu-latest
+    env:
+      PYTHONPATH: ${{ github.workspace }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
