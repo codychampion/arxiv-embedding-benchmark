@@ -1,5 +1,11 @@
 # Academic Embedding Model Evaluator
 
+![Status](https://img.shields.io/badge/status-active-16a34a)
+![Python](https://img.shields.io/badge/Python-benchmarking-3776ab)
+![Embeddings](https://img.shields.io/badge/embeddings-evaluation-7c3aed)
+![arXiv](https://img.shields.io/badge/data-arXiv-b31b1b)
+![Retrieval](https://img.shields.io/badge/use%20case-research%20retrieval-111827)
+
 A benchmarking toolkit for comparing embedding models on academic paper similarity tasks using research paper titles, abstracts, and field labels.
 
 The project asks a practical retrieval question: can an embedding model connect a paper title to its real abstract, keep related papers close, separate unrelated fields, and behave consistently across domains?
