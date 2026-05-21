@@ -1,20 +1,22 @@
 import numpy as np
 import pandas as pd
 import sys
-from typing import List, Dict, Tuple
+from typing import TYPE_CHECKING, List, Dict, Tuple
 from sklearn.metrics.pairwise import cosine_similarity
 from rich.table import Table
 from rich.panel import Panel
 from .utils import console
-from .models import ModelManager
 from datetime import datetime
 import yaml
 from pathlib import Path
 
+if TYPE_CHECKING:
+    from .models import ModelManager
+
 class Evaluator:
     """Handles evaluation and scoring of embeddings."""
     
-    def __init__(self, config, model_manager: ModelManager):
+    def __init__(self, config, model_manager: "ModelManager"):
         """Initialize the evaluator."""
         self.config = config
         self.model_manager = model_manager
