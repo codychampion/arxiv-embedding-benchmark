@@ -55,7 +55,7 @@ test = [
 ]
 
 [project.scripts]
-arxiv-embedding-benchmark = "src.embedding_benchmarking.cli:cli"
+arxiv-embedding-benchmark = "embedding_benchmarking.cli:cli"
 
 [project.urls]
 Homepage = "https://github.com/codychampion/arxiv-embedding-benchmark"
