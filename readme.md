@@ -1,4 +1,4 @@
-# Academic Embedding Model Evaluator
+# ArXiv Embedding Benchmark
 
 ![Status](https://img.shields.io/badge/status-active-16a34a)
 ![Python](https://img.shields.io/badge/Python-benchmarking-3776ab)
@@ -53,6 +53,7 @@ The useful signal is not only the winner. Different model families trade off hig
 ## Quick start
 
 ```bash
+# Current repository name; recommended manual rename: arxiv-embedding-benchmark
 git clone https://github.com/codychampion/embedding_benchmarking_arvix.git
 cd embedding_benchmarking_arvix
 python -m venv .venv
@@ -60,6 +61,16 @@ source .venv/bin/activate
 pip install -r requirements.txt
 python -m src.embedding_benchmarking.cli evaluate
 ```
+
+## Recommended repository rename
+
+The current GitHub repository name is `embedding_benchmarking_arvix`. For public polish, rename it to:
+
+```text
+arxiv-embedding-benchmark
+```
+
+That fixes the `arvix` typo, uses GitHub-friendly hyphens, and better matches how people search for this kind of tool.
 
 ## Configuration
 
@@ -96,8 +107,8 @@ This benchmark is best used as a decision-support tool, not a universal ranking.
 ## Citation
 
 ```bibtex
-@software{embedding_benchmarking_arxiv,
-  title = {Academic Embedding Model Evaluator},
+@software{arxiv_embedding_benchmark,
+  title = {ArXiv Embedding Benchmark},
   author = {Champion, Cody},
   year = {2024},
   description = {A tool for evaluating embedding models on academic paper similarity tasks}
