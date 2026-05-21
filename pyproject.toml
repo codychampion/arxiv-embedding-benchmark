@@ -1,0 +1,66 @@
+[build-system]
+requires = ["hatchling>=1.26"]
+build-backend = "hatchling.build"
+
+[project]
+name = "arxiv-embedding-benchmark"
+version = "0.1.0"
+description = "Benchmark embedding models on academic paper similarity and retrieval tasks."
+readme = "readme.md"
+requires-python = ">=3.10"
+license = "MIT"
+authors = [
+  { name = "Cody Champion" }
+]
+keywords = [
+  "arxiv",
+  "embeddings",
+  "retrieval",
+  "rag",
+  "benchmarking",
+  "nlp",
+  "scientific-computing",
+  "huggingface",
+  "bedrock"
+]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+  "Topic :: Text Processing :: Linguistic"
+]
+dependencies = [
+  "arxiv>=2.1.0",
+  "boto3>=1.34.0",
+  "click>=8.1.0",
+  "numpy>=1.24.0",
+  "pandas>=2.0.0",
+  "python-dotenv>=1.0.0",
+  "PyYAML>=6.0.0",
+  "rich>=13.0.0",
+  "scikit-learn>=1.3.0",
+  "torch>=2.0.0",
+  "transformers>=4.35.0"
+]
+
+[project.optional-dependencies]
+test = [
+  "pytest>=7.4.0"
+]
+
+[project.scripts]
+arxiv-embedding-benchmark = "src.embedding_benchmarking.cli:cli"
+
+[project.urls]
+Homepage = "https://github.com/codychampion/arxiv-embedding-benchmark"
+Repository = "https://github.com/codychampion/arxiv-embedding-benchmark"
+Issues = "https://github.com/codychampion/arxiv-embedding-benchmark/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/embedding_benchmarking"]
