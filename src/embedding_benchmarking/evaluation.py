@@ -1,20 +1,22 @@
 import numpy as np
 import pandas as pd
 import sys
-from typing import List, Dict, Tuple
+from typing import TYPE_CHECKING, List, Dict, Tuple
 from sklearn.metrics.pairwise import cosine_similarity
 from rich.table import Table
 from rich.panel import Panel
 from .utils import console
-from .models import ModelManager
 from datetime import datetime
 import yaml
 from pathlib import Path
 
+if TYPE_CHECKING:
+    from .models import ModelManager
+
 class Evaluator:
     """Handles evaluation and scoring of embeddings."""
     
-    def __init__(self, config, model_manager: ModelManager):
+    def __init__(self, config, model_manager: "ModelManager"):
         """Initialize the evaluator."""
         self.config = config
         self.model_manager = model_manager
@@ -30,6 +32,39 @@ class Evaluator:
             hours = seconds / 3600
             return f"{hours:.1f}h"
 
+    def _validate_papers(self, papers: List[Dict]) -> None:
+        """Validate that the paper set can support the configured comparisons."""
+        if len(papers) < 2:
+            raise ValueError("At least two papers are required for pairwise evaluation.")
+
+        required = {"title", "abstract", "category"}
+        missing = [i for i, paper in enumerate(papers) if not required.issubset(paper)]
+        if missing:
+            raise ValueError(f"Papers missing required keys {required}: indices {missing[:5]}")
+
+        categories = [paper["category"] for paper in papers]
+        unique_categories = set(categories)
+        if len(unique_categories) < 2:
+            raise ValueError("At least two categories are required for cross-field comparisons.")
+
+        has_same_field_pair = any(categories.count(category) > 1 for category in unique_categories)
+        if not has_same_field_pair:
+            raise ValueError("At least one category must contain two or more papers for same-field comparisons.")
+
+    def _summarize_scores(self, results: Dict[str, List[float]]) -> Dict[str, Tuple[float, float]]:
+        """Summarize metric buckets and fail clearly if any comparison bucket is empty."""
+        empty_metrics = [name for name, values in results.items() if not values]
+        if empty_metrics:
+            raise ValueError(
+                "Cannot summarize evaluation because these metric buckets are empty: "
+                + ", ".join(empty_metrics)
+            )
+
+        return {
+            name: (float(np.mean(values)), float(np.std(values)))
+            for name, values in results.items()
+        }
+
     def evaluate_model(self,
                       papers: List[Dict],
                       model_name: str,
@@ -39,9 +74,12 @@ class Evaluator:
         """Evaluate a model on papers using batched operations."""
         from time import time
         
+        self._validate_papers(papers)
+        total_papers = total_papers or len(papers)
+
         # Initialize timing dictionary and batch size
         stage_times = {}
-        batch_size = min(512, total_papers)  # Smaller batches for more frequent updates
+        batch_size = max(1, min(512, total_papers))
         
         results = {
             'title_abstract_same': [],
@@ -58,7 +96,7 @@ class Evaluator:
         
         # Start timing for title embeddings
         start_time = time()
-        title_embeddings = []
+        title_embedding_batches = []
         
         # Process titles in batches
         for i in range(0, len(titles), batch_size):
@@ -67,15 +105,14 @@ class Evaluator:
                 progress.update(progress_task, 
                               description=f"[yellow]Getting title embeddings ({i+len(batch)}/{total_papers})[/yellow]",
                               completed=10 + (20 * (i+len(batch)) / len(titles)))
-            batch_embeddings = self.model_manager.get_embeddings(batch, model_name)
-            title_embeddings.extend(batch_embeddings)
+            title_embedding_batches.append(self.model_manager.get_embeddings(batch, model_name))
         
-        title_embeddings = np.array(title_embeddings)
+        title_embeddings = np.vstack(title_embedding_batches)
         stage_times['title_embeddings'] = time() - start_time
         
         # Start timing for abstract embeddings
         start_time = time()
-        abstract_embeddings = []
+        abstract_embedding_batches = []
         
         # Process abstracts in batches
         for i in range(0, len(abstracts), batch_size):
@@ -86,16 +123,15 @@ class Evaluator:
                 progress.update(progress_task, 
                               description=f"[yellow]Getting abstract embeddings ({i+len(batch)}/{total_papers}) - {time_str} remaining[/yellow]",
                               completed=30 + (20 * (i+len(batch)) / len(abstracts)))
-            batch_embeddings = self.model_manager.get_embeddings(batch, model_name)
-            abstract_embeddings.extend(batch_embeddings)
+            abstract_embedding_batches.append(self.model_manager.get_embeddings(batch, model_name))
         
-        abstract_embeddings = np.array(abstract_embeddings)
+        abstract_embeddings = np.vstack(abstract_embedding_batches)
         stage_times['abstract_embeddings'] = time() - start_time
         
         # Start timing for similarity computations
         start_time = time()
         if progress and progress_task:
-            est_time = (len(papers) ** 2) * 0.0001  # Rough estimate for similarity computation
+            est_time = (len(papers) ** 2) * 0.0001
             time_str = self._format_time(est_time)
             progress.update(progress_task,
                           description=f"[yellow]Computing title-abstract similarities - {time_str} estimated[/yellow]",
@@ -109,7 +145,6 @@ class Evaluator:
         # Start timing for pairwise computations
         start_time = time()
         if progress and progress_task:
-            # Estimate time based on paper count (quadratic complexity)
             est_time = (len(papers) ** 2) * (stage_times['similarity_computation'] / len(papers))
             time_str = self._format_time(est_time)
             progress.update(progress_task,
@@ -124,8 +159,7 @@ class Evaluator:
         # Start timing for score processing
         start_time = time()
         if progress and progress_task:
-            # Estimate remaining time based on paper count
-            est_time = (len(papers) ** 2) * 0.0001  # Rough estimate for score processing
+            est_time = (len(papers) ** 2) * 0.0001
             progress.update(progress_task,
                           description=f"[yellow]Processing similarity scores (~{est_time:.1f}s)[/yellow]",
                           completed=90)
@@ -134,7 +168,7 @@ class Evaluator:
         n = len(papers)
         for i in range(n):
             for j in range(n):
-                if i != j:  # Skip self-comparisons
+                if i != j:
                     if categories[i] == categories[j]:
                         results['title_abstract_diff'].append(title_abstract_sims[i, j])
                         results['abstract_abstract_same'].append(abstract_abstract_sims[i, j])
@@ -151,10 +185,13 @@ class Evaluator:
                           description=f"[green]Evaluation complete (Total: {time_str})[/green]",
                           completed=100)
         
-        return {k: (float(np.mean(v)), float(np.std(v))) for k, v in results.items()}
+        return self._summarize_scores(results)
 
     def create_leaderboard(self, results_df: pd.DataFrame, experiment_dir: Path) -> pd.DataFrame:
         """Create a leaderboard ranking models."""
+        if results_df.empty:
+            raise ValueError("No model results were produced; cannot create leaderboard.")
+
         def calculate_score(row):
             good_signals = [
                 float(row["Title-Own Abstract Mean"]),
@@ -228,6 +265,9 @@ class Evaluator:
                                papers: List[Dict], 
                                experiment_dir: Path) -> None:
         """Save experiment metadata."""
+        if not papers:
+            raise ValueError("No papers were collected; cannot save experiment metadata.")
+
         # Create experiment directory if it doesn't exist
         experiment_dir.mkdir(parents=True, exist_ok=True)
 

@@ -64,20 +64,25 @@ class ModelManager:
         return (min_tokens <= token_count <= max_tokens, token_count)
 
     def get_embeddings(self, texts: List[str], model_name: str) -> np.ndarray:
-        """Get embeddings for texts."""
+        """Get embeddings for texts as a two-dimensional numpy array."""
+        if not texts:
+            return np.empty((0, 0), dtype=np.float32)
+
         if model_name == 'Bedrock':
-            return self._get_bedrock_embeddings(texts)
+            embeddings = self._get_bedrock_embeddings(texts)
         else:
-            return self._get_hf_embeddings(texts, model_name)
+            embeddings = self._get_hf_embeddings(texts, model_name)
+
+        return np.asarray(embeddings, dtype=np.float32)
 
     def get_embedding(self, text: str, model_name: str) -> np.ndarray:
         """Get embedding for a single text."""
         return self.get_embeddings([text], model_name)[0]
 
-    def _get_bedrock_embeddings(self, texts: List[str]) -> List[np.ndarray]:
+    def _get_bedrock_embeddings(self, texts: List[str]) -> np.ndarray:
         """Get embeddings from Bedrock."""
         if self.bedrock is None:
-            raise Exception("Bedrock client not initialized. Check AWS credentials and region.")
+            raise RuntimeError("Bedrock client not initialized. Check AWS credentials and region.")
         
         embeddings = []
         for text in texts:  # Bedrock doesn't support batching
@@ -92,11 +97,12 @@ class ModelManager:
                         "normalize": True
                     })
                 )
-                embeddings.append(np.array(json.loads(response['body'].read())['embedding']))
+                body = json.loads(response['body'].read())
+                embeddings.append(np.asarray(body['embedding'], dtype=np.float32))
             except Exception as e:
-                raise Exception(f"Bedrock API error: {str(e)}")
+                raise RuntimeError(f"Bedrock API error: {str(e)}") from e
         
-        return embeddings
+        return np.vstack(embeddings)
 
     def _get_hf_embeddings(self, texts: List[str], model_name: str) -> np.ndarray:
         """Get embeddings from HuggingFace model."""
@@ -121,7 +127,6 @@ class ModelManager:
             input_mask_expanded = attention_mask.unsqueeze(-1).expand(token_embeddings.size()).float()
             embeddings = torch.sum(token_embeddings * input_mask_expanded, 1) / torch.clamp(input_mask_expanded.sum(1), min=1e-9)
             
-            # Normalize embeddings
             embeddings = embeddings.cpu().numpy()
             norms = np.linalg.norm(embeddings, axis=1, keepdims=True)
             return embeddings / np.maximum(norms, 1e-9)
