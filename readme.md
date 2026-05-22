@@ -5,8 +5,11 @@
 ![Embeddings](https://img.shields.io/badge/embeddings-evaluation-7c3aed)
 ![arXiv](https://img.shields.io/badge/data-arXiv-b31b1b)
 ![Retrieval](https://img.shields.io/badge/use%20case-research%20retrieval-111827)
+![PyPI](https://img.shields.io/pypi/v/arxiv-embedding-benchmark?label=PyPI)
 
 A benchmarking toolkit for comparing embedding models on academic paper similarity tasks using research paper titles, abstracts, and field labels.
+
+Published package: [`arxiv-embedding-benchmark` on PyPI](https://pypi.org/project/arxiv-embedding-benchmark/)
 
 The project asks a practical retrieval question: can an embedding model connect a paper title to its real abstract, keep related papers close, separate unrelated fields, and behave consistently across domains?
 
@@ -53,6 +56,13 @@ The useful signal is not only the winner. Different model families trade off hig
 ## Quick start
 
 ```bash
+pip install arxiv-embedding-benchmark
+arxiv-embedding-benchmark evaluate
+```
+
+For local development:
+
+```bash
 git clone https://github.com/codychampion/arxiv-embedding-benchmark.git
 cd arxiv-embedding-benchmark
 python -m venv .venv
@@ -76,9 +86,9 @@ Each run creates a timestamped experiment directory under `experiments/`.
 | `papers_metadata.csv` | Paper titles, abstracts, fields, and metadata |
 | `collection_statistics.yaml` | Corpus statistics and token distribution |
 
-## Publishing
+## Release status
 
-The package includes PyPI metadata and a trusted-publishing workflow. Configure PyPI Trusted Publishing for this repository before cutting the first release.
+Version `0.1.0` is published on PyPI. The repository also includes a trusted-publishing workflow for future tagged releases.
 
 ```bash
 python -m build
