@@ -53,24 +53,13 @@ The useful signal is not only the winner. Different model families trade off hig
 ## Quick start
 
 ```bash
-# Current repository name; recommended manual rename: arxiv-embedding-benchmark
-git clone https://github.com/codychampion/embedding_benchmarking_arvix.git
-cd embedding_benchmarking_arvix
+git clone https://github.com/codychampion/arxiv-embedding-benchmark.git
+cd arxiv-embedding-benchmark
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 python -m src.embedding_benchmarking.cli evaluate
 ```
-
-## Recommended repository rename
-
-The current GitHub repository name is `embedding_benchmarking_arvix`. For public polish, rename it to:
-
-```text
-arxiv-embedding-benchmark
-```
-
-That fixes the `arvix` typo, uses GitHub-friendly hyphens, and better matches how people search for this kind of tool.
 
 ## Configuration
 
@@ -86,6 +75,15 @@ Each run creates a timestamped experiment directory under `experiments/`.
 | `model_leaderboard.csv` | Ranked aggregate leaderboard |
 | `papers_metadata.csv` | Paper titles, abstracts, fields, and metadata |
 | `collection_statistics.yaml` | Corpus statistics and token distribution |
+
+## Publishing
+
+The package includes PyPI metadata and a trusted-publishing workflow. Configure PyPI Trusted Publishing for this repository before cutting the first release.
+
+```bash
+python -m build
+twine check dist/*
+```
 
 ## Project structure
 
